@@ -15,6 +15,14 @@ def make_constants(f):
     return with_constants
 
 
+def simplify(f):
+    def wrapper(*args, **kwargs):
+        output = f(*args, **kwargs)
+
+        return output.eval() if not isinstance(output, Val.__args__) else output
+    return wrapper
+
+
 class Value:
     def __init__(self):
         pass
@@ -61,6 +69,10 @@ class Value:
     def __str__(self):
         return ''
 
+    @simplify
+    def diff(self, wrt):
+        raise NotImplementedError
+
 
 class Variable(Value):
     def __init__(self, name: str):
@@ -73,6 +85,9 @@ class Variable(Value):
 
     def __str__(self):
         return self.name
+
+    def diff(self, wrt):
+        return 1 if wrt == self.name else 0
 
 
 class Constant(Value):
@@ -87,6 +102,16 @@ class Constant(Value):
     def __str__(self):
         return str(self.val)
 
+    def diff(self, wrt):
+        return 0
+
+    def __eq__(self, other):
+        if isinstance(other, Constant):
+            return self.val == other.val
+        elif isinstance(other, Val.__args__):
+            return self.val == other
+        return False
+
 
 class Operator(Value):
     precedence = 0
@@ -95,6 +120,9 @@ class Operator(Value):
         super().__init__()
 
         self.vals = vals
+
+    def diff(self, wrt):
+        raise NotImplementedError
 
 
 def parenthesize(val: Value, paren_type: type = Operator, precedence: int = 0):
@@ -125,19 +153,46 @@ class BinaryOperator(Operator):
         # TODO: consider that spacing is not needed for all operators (i.e. powers)
         return (' ' + self.symbol + ' ').join(sub_strings)
 
+    def diff(self, wrt):
+        raise NotImplementedError
+
 
 class Sum(BinaryOperator):
     symbol = '+'
 
     def eval(self, val_dict=None):
-        return self.vals[0].eval(val_dict) + self.vals[1].eval(val_dict)
+        l_val = self.vals[0].eval(val_dict)
+        r_val = self.vals[1].eval(val_dict)
+
+        if l_val == 0.:
+            return r_val
+        elif r_val == 0.:
+            return l_val
+
+        return r_val + l_val
+
+    @simplify
+    def diff(self, wrt):
+        return self.vals[0].diff(wrt) + self.vals[1].diff(wrt)
 
 
 class Difference(BinaryOperator):
     symbol = '-'
 
     def eval(self, val_dict=None):
-        return self.vals[0].eval(val_dict) - self.vals[1].eval(val_dict)
+        l_val = self.vals[0].eval(val_dict)
+        r_val = self.vals[1].eval(val_dict)
+
+        if l_val == 0.:
+            return -r_val
+        elif r_val == 0.:
+            return l_val
+
+        return l_val - r_val
+
+    @simplify
+    def diff(self, wrt):
+        return self.vals[0].diff(wrt) - self.vals[1].diff(wrt)
 
 
 class Product(BinaryOperator):
@@ -145,7 +200,21 @@ class Product(BinaryOperator):
     symbol = '*'
 
     def eval(self, val_dict=None):
-        return self.vals[0].eval(val_dict) * self.vals[1].eval(val_dict)
+        l_val = self.vals[0].eval(val_dict)
+        r_val = self.vals[1].eval(val_dict)
+
+        if l_val == 0. or r_val == 0.:
+            return 0.
+        elif l_val == 1.:
+            return r_val
+        elif r_val == 1.:
+            return l_val
+
+        return l_val * r_val
+
+    @simplify
+    def diff(self, wrt):
+        return self.vals[0] * self.vals[1].diff(wrt) + self.vals[0].diff(wrt) * self.vals[1]
 
 
 class Division(BinaryOperator):
@@ -153,7 +222,21 @@ class Division(BinaryOperator):
     symbol = '/'
 
     def eval(self, val_dict=None):
-        return self.vals[0].eval(val_dict) / self.vals[1].eval(val_dict)
+        l_val = self.vals[0].eval(val_dict)
+        r_val = self.vals[1].eval(val_dict)
+
+        if l_val == 0.:
+            return 0.
+        elif r_val == 0.:
+            raise ZeroDivisionError
+        elif r_val == 1.:
+            return l_val
+
+        return l_val / r_val
+
+    @simplify
+    def diff(self, wrt):
+        return (self.vals[1] * self.vals[0].diff(wrt) - self.vals[0] * self.vals[1].diff(wrt)) / (self.vals[1] * self.vals[1])
 
 
 class Power(Operator):
@@ -161,7 +244,17 @@ class Power(Operator):
     symbol = '^'
 
     def eval(self, val_dict=None):
-        return self.vals[0].eval(val_dict) ** self.vals[1].eval(val_dict)
+        base = self.vals[0].eval(val_dict)
+        power = self.vals[1].eval(val_dict)
+
+        if power == 0.:
+            return 1
+        elif power == 1.:
+            return base
+        elif base == 0. or base == 1.:
+            return base
+
+        return base ** power
 
     def __str__(self):
         base_str = parenthesize(self.vals[0], precedence=self.precedence)
@@ -169,10 +262,14 @@ class Power(Operator):
 
         return base_str + self.symbol + power_str
 
+    @simplify
+    def diff(self, wrt):
+        return self.vals[1] * self.vals[0].diff(wrt) * self.vals[0] ** (self.vals[1] - 1)
+
 
 if __name__ == '__main__':
     exp = 5 + ((Constant(1.) * Constant(3.) - Variable('x')) / Constant(4.) + 4) ** 5
 
     print(exp)
     print(exp.eval())
-    print(exp.eval({'x': 1}))
+    print(exp.diff('x'))
