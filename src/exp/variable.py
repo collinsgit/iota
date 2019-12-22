@@ -26,25 +26,33 @@ class Value:
     def __add__(self, other):
         return Sum(self, other)
 
-    __radd__ = __add__
+    @make_constants
+    def __radd__(self, other):
+        return Sum(other, self)
 
     @make_constants
     def __sub__(self, other):
         return Difference(self, other)
 
-    __rsub__ = lambda self, other: Difference(other, self)
+    @make_constants
+    def __rsub__(self, other):
+        return Difference(other, self)
 
     @make_constants
     def __mul__(self, other):
         return Product(self, other)
 
-    __rmul__ = __mul__
+    @make_constants
+    def __rmul__(self, other):
+        return Product(other, self)
 
     @make_constants
     def __truediv__(self, other):
         return Division(self, other)
 
-    __rtruediv__ = lambda self, other: Division(other, self)
+    @make_constants
+    def __rtruediv__(self, other):
+        return Division(other, self)
 
     @make_constants
     def __pow__(self, power, modulo=None):
@@ -163,7 +171,7 @@ class Power(Operator):
 
 
 if __name__ == '__main__':
-    exp = ((Constant(1.) * Constant(3.) - Variable('x')) / Constant(4.) + 4) ** 5
+    exp = 5 + ((Constant(1.) * Constant(3.) - Variable('x')) / Constant(4.) + 4) ** 5
 
     print(exp)
     print(exp.eval())
