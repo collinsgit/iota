@@ -73,24 +73,36 @@ class Constant(Value):
 
 
 class Operator(Value):
-    symbol = ''
+    precedence = 0
 
     def __init__(self, *vals: Value):
         super().__init__()
 
         self.vals = vals
 
-    def eval(self, val_dict=None):
-        pass
+
+def parenthesize(val: Value, paren_type: type = Operator, precedence: int = 0):
+    val_str = str(val)
+    val_precedence = val.precedence if isinstance(val, Operator) else 0
+
+    if val_precedence < precedence and isinstance(val, paren_type):
+        val_str = '(' + val_str + ')'
+    return val_str
+
+
+class BinaryOperator(Operator):
+    symbol = ''
+
+    def __init__(self, *vals: Value):
+        super().__init__(*vals)
+
+        assert len(vals) == 2
 
     def __str__(self):
         sub_strings = []
 
         for val in self.vals:
-            sub_string = str(val)
-
-            if isinstance(val, Operator):
-                sub_string = '(' + sub_string + ')'
+            sub_string = parenthesize(val, self.precedence)
 
             sub_strings.append(sub_string)
 
@@ -98,28 +110,30 @@ class Operator(Value):
         return (' ' + self.symbol + ' ').join(sub_strings)
 
 
-class Sum(Operator):
+class Sum(BinaryOperator):
     symbol = '+'
 
     def eval(self, val_dict=None):
         return sum(map(lambda x: x.eval(val_dict), self.vals))
 
 
-class Difference(Operator):
+class Difference(BinaryOperator):
     symbol = '-'
 
     def eval(self, val_dict=None):
         return self.vals[0].eval(val_dict) - self.vals[1].eval(val_dict)
 
 
-class Product(Operator):
+class Product(BinaryOperator):
+    precedence = 1
     symbol = '*'
 
     def eval(self, val_dict=None):
         return reduce(operator.mul, map(lambda x: x.eval(val_dict), self.vals))
 
 
-class Division(Operator):
+class Division(BinaryOperator):
+    precedence = 1
     symbol = '/'
 
     def eval(self, val_dict=None):
@@ -127,14 +141,21 @@ class Division(Operator):
 
 
 class Power(Operator):
-    symbol = '**'
+    precedence = 2
+    symbol = '^'
 
     def eval(self, val_dict=None):
         return self.vals[0].eval(val_dict) ** self.vals[1].eval(val_dict)
 
+    def __str__(self):
+        base_str = parenthesize(self.vals[0], precedence=self.precedence)
+        power_str = parenthesize(self.vals[1], precedence=self.precedence)
+
+        return base_str + self.symbol + power_str
+
 
 if __name__ == '__main__':
-    exp = (Constant(1.) * Constant(3.) + Constant(5.)) / Constant(4.) + 4
+    exp = ((Constant(1.) * Constant(3.) + Constant(5.)) / Constant(4.) + 4) ** 5
 
     print(exp.eval())
     print(exp)
