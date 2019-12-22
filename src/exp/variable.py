@@ -26,17 +26,25 @@ class Value:
     def __add__(self, other):
         return Sum(self, other)
 
+    __radd__ = __add__
+
     @make_constants
     def __sub__(self, other):
         return Difference(self, other)
+
+    __rsub__ = lambda self, other: Difference(other, self)
 
     @make_constants
     def __mul__(self, other):
         return Product(self, other)
 
+    __rmul__ = __mul__
+
     @make_constants
     def __truediv__(self, other):
         return Division(self, other)
+
+    __rtruediv__ = lambda self, other: Division(other, self)
 
     @make_constants
     def __pow__(self, power, modulo=None):
@@ -102,7 +110,7 @@ class BinaryOperator(Operator):
         sub_strings = []
 
         for val in self.vals:
-            sub_string = parenthesize(val, self.precedence)
+            sub_string = parenthesize(val, precedence=self.precedence)
 
             sub_strings.append(sub_string)
 
@@ -114,7 +122,7 @@ class Sum(BinaryOperator):
     symbol = '+'
 
     def eval(self, val_dict=None):
-        return sum(map(lambda x: x.eval(val_dict), self.vals))
+        return self.vals[0].eval(val_dict) + self.vals[1].eval(val_dict)
 
 
 class Difference(BinaryOperator):
@@ -129,7 +137,7 @@ class Product(BinaryOperator):
     symbol = '*'
 
     def eval(self, val_dict=None):
-        return reduce(operator.mul, map(lambda x: x.eval(val_dict), self.vals))
+        return self.vals[0].eval(val_dict) * self.vals[1].eval(val_dict)
 
 
 class Division(BinaryOperator):
@@ -155,7 +163,8 @@ class Power(Operator):
 
 
 if __name__ == '__main__':
-    exp = ((Constant(1.) * Constant(3.) + Constant(5.)) / Constant(4.) + 4) ** 5
+    exp = ((Constant(1.) * Constant(3.) - Variable('x')) / Constant(4.) + 4) ** 5
 
-    print(exp.eval())
     print(exp)
+    print(exp.eval())
+    print(exp.eval({'x': 1}))
