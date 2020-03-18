@@ -1,7 +1,14 @@
+"""
+This module contains all definitions of various components of the system.
+"""
+
 import math
 from typing import Dict, Union
 
 
+""" Terminal components of the language that are operated on. """
+
+# Representation of a numerical value.
 Val = Union[float, int]
 
 
