@@ -1,0 +1,14 @@
+language: python
+
+python: 
+    - "3.7"
+    - "3.7-dev"
+
+# Command to install dependencies.
+install:
+    - pip install -r requirements.txt
+
+# Run the actual tests.
+script:
+    - python -m unittest discover
+
