@@ -27,9 +27,3 @@ class Uniform(RandomVariable):
 
     def expect(self):
         return (self.a + self.b) / 2
-
-
-if __name__ == '__main__':
-    x = Uniform('x', 1, 2)
-    print(x.sample())
-    print(x.expect())
