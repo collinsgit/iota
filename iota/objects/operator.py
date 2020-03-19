@@ -1,3 +1,9 @@
+"""
+
+Relations between different values are defined below through operators.
+
+"""
+
 from .value import simplify
 from .value import Val, Value
 from .value import make_constants

@@ -1,6 +1,10 @@
-from typing import Dict, Union
+"""
 
-""" Terminal components of the language that are operated on. """
+Top-level definition of all components in the system.
+
+"""
+
+from typing import Dict, Union
 
 # Representation of a numerical value.
 Val = Union[float, int]
@@ -74,4 +78,10 @@ class Value:
         raise NotImplementedError
 
 
+# It is important to import Operator in the highest level component in order to
+# override built-in operators on iota's definitions. However, this introduces a
+# circular dependency as Operator is a subclass of Value. In order to prevent
+# Python from breaking, we must include this import at the bottom of the file
+# so that the namespace of Value is already defined by the time the below line
+# is reached.
 from .operator import *  # noqa: E402
