@@ -74,4 +74,4 @@ class Value:
         raise NotImplementedError
 
 
-from .operator import *
+from .operator import *  # noqa: E402
