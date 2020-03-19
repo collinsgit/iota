@@ -232,11 +232,9 @@ class Power(Operator):
         return self * (power.diff(wrt) * Logarithm(base) + power * base.diff(wrt) / base)
 
 
-"""
-The definition of some of these simple operators requires some of our extra
-operators. In particular, the derivative of a power relies on the natural
-logarithm. In order to maintain organization of operations, the extra operators
-are in the ops.py file rather than this file, despite the resulting circular
-dependency. The reasoning parallels that given in value.py.
-"""
+# The definition of some of these simple operators requires some of our extra
+# operators. In particular, the derivative of a power relies on the natural
+# logarithm. In order to maintain organization of operations, the extra operators
+# are in the ops.py file rather than this file, despite the resulting circular
+# dependency. The reasoning parallels that given in value.py.
 from .ops import *  # noqa: E402
