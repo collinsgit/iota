@@ -13,43 +13,65 @@ from typing import Dict
 
 
 class Operator(Value):
+    """
+    Represents operators, or values which act on other values
+    """
+
     precedence = 0
 
     @make_constants
     def __init__(self, *vals: Value):
         super().__init__()
 
+        # Values being acted upon
         self.vals = vals
 
     def eval(self, val_dict: Dict = None):
+        # Evaluation remains null
         pass
 
     def diff(self, wrt):
+        # Differentiation remains unimplemented
         raise NotImplementedError
 
 
 def parenthesize(val: Value, paren_type: type = Operator, precedence: float = 0.):
+    """
+    Function to wrap parentheses around Value string
+    :param val:
+    :param paren_type:
+    :param precedence:
+    :return: A string representing the expression, in parenthesized form
+    """
     val_str = str(val)
     val_precedence = val.precedence if isinstance(val, Operator) else 0
 
+    # Check that precedence difference necessitates parentheses
     if val_precedence < precedence and isinstance(val, paren_type):
+        # Check to ensure parentheses are not redundant
         if val_str[0] != '(' or val_str[-1] != ')':
             val_str = '(' + val_str + ')'
     return val_str
 
 
 class BinaryOperator(Operator):
+    """
+    Represents all operators which take in two values
+    """
+
     symbol = ''
 
     def __init__(self, *vals: Value):
         super().__init__(*vals)
 
+        # Assert that operation is binary
         assert len(vals) == 2
 
     def __str__(self):
         sub_strings = []
 
         for i, val in enumerate(self.vals):
+            # Parenthesize components if lower precedence
             sub_string = parenthesize(val, precedence=self.precedence + (0.1 if i else 0.))
 
             sub_strings.append(sub_string)
@@ -62,12 +84,18 @@ class BinaryOperator(Operator):
 
 
 class Sum(BinaryOperator):
+    """
+    Represent summation of values
+    """
+
     symbol = '+'
 
     def eval(self, val_dict=None):
+        # Evaluate left and right, then add
         l_val = self.vals[0].eval(val_dict)
         r_val = self.vals[1].eval(val_dict)
 
+        # Ignore 0 values
         if l_val == 0.:
             return r_val
         elif r_val == 0.:
@@ -77,16 +105,23 @@ class Sum(BinaryOperator):
 
     @simplify
     def diff(self, wrt):
+        # Apply linearity of differentation
         return self.vals[0].diff(wrt) + self.vals[1].diff(wrt)
 
 
 class Difference(BinaryOperator):
+    """
+    Represent difference between values
+    """
+
     symbol = '-'
 
     def eval(self, val_dict=None):
+        # Evaluate left and right, then subtract
         l_val = self.vals[0].eval(val_dict)
         r_val = self.vals[1].eval(val_dict)
 
+        # Ignore 0 values
         if l_val == 0.:
             return -r_val
         elif r_val == 0.:
@@ -96,17 +131,24 @@ class Difference(BinaryOperator):
 
     @simplify
     def diff(self, wrt):
+        # Apply linearity of differentation
         return self.vals[0].diff(wrt) - self.vals[1].diff(wrt)
 
 
 class Product(BinaryOperator):
+    """
+    Represent product of values
+    """
+
     precedence = 1
     symbol = '*'
 
     def eval(self, val_dict=None):
+        # Evaluate left and right, then multiply
         l_val = self.vals[0].eval(val_dict)
         r_val = self.vals[1].eval(val_dict)
 
+        # Simplify in null/identity cases
         if l_val == 0. or r_val == 0.:
             return 0.
         elif l_val == 1.:
@@ -118,17 +160,24 @@ class Product(BinaryOperator):
 
     @simplify
     def diff(self, wrt):
+        # Apply product rule
         return self.vals[0] * self.vals[1].diff(wrt) + self.vals[0].diff(wrt) * self.vals[1]
 
 
 class Division(BinaryOperator):
+    """
+    Represent division of values
+    """
+
     precedence = 1
     symbol = '/'
 
     def eval(self, val_dict=None):
+        # Evaluate left and right, then divide
         l_val = self.vals[0].eval(val_dict)
         r_val = self.vals[1].eval(val_dict)
 
+        # Simplify in null/identity cases
         if l_val == 0.:
             return 0.
         elif r_val == 0.:
@@ -140,14 +189,20 @@ class Division(BinaryOperator):
 
     @simplify
     def diff(self, wrt):
+        # Apply quotient rule
         return (self.vals[1] * self.vals[0].diff(wrt) - self.vals[0] * self.vals[1].diff(wrt)) / (self.vals[1] * self.vals[1])
 
 
 class Power(Operator):
+    """
+    Represent exponentiation
+    """
+
     precedence = 2
     symbol = '^'
 
     def eval(self, val_dict=None):
+        # Evaluate base and power, then exponentiate
         base = self.vals[0].eval(val_dict)
         power = self.vals[1].eval(val_dict)
 
@@ -161,6 +216,7 @@ class Power(Operator):
         return base ** power
 
     def __str__(self):
+        # Parenthesize base and power, then combine
         base_str = parenthesize(self.vals[0], precedence=self.precedence)
         power_str = parenthesize(self.vals[1], precedence=self.precedence)
 
@@ -168,56 +224,19 @@ class Power(Operator):
 
     @simplify
     def diff(self, wrt):
-        return self.vals[1] * self.vals[0].diff(wrt) * self.vals[0] ** (self.vals[1] - 1)
+        # y = f(x)^g(x)
+        # y' = y * (g'(x) * ln(f(x)) + g(x) * f'(x) / f(x))
+        base = self.vals[0]
+        power = self.vals[1]
+
+        return self * (power.diff(wrt) * Logarithm(base) + power * base.diff(wrt) / base)
 
 
-class Logarithm(Operator):
-    precedence = 2
-
-    def __str__(self):
-        if len(self.vals) == 1:
-            antilog = str(self.vals[0])
-
-            return 'ln({})'.format(antilog)
-        elif len(self.vals) == 2:
-            base = str(self.vals[0])
-            antilog = str(self.vals[1])
-
-            return 'log({}, {})'.format(base, antilog)
-        else:
-            raise NotImplementedError
-
-    def eval(self, val_dict=None):
-        if len(self.vals) == 1:
-            base = math.e
-            antilog = self.vals[0].eval(val_dict)
-        else:
-            base = self.vals[0].eval(val_dict)
-            antilog = self.vals[1].eval(val_dict)
-
-        if isinstance(base, Val.__args__):
-            if antilog == 1.:
-                return 0.
-            elif antilog == base:
-                return 1.
-
-            if isinstance(antilog, Val.__args__):
-                return math.log(antilog, base)
-            else:
-                return Logarithm(antilog) if base == math.e else Logarithm(base, antilog)
-        else:
-            raise NotImplementedError
-
-    @simplify
-    def diff(self, wrt):
-        if len(self.vals) == 1:
-            base = math.e
-            antilog = self.vals[0]
-        else:
-            base = self.vals[0].eval()
-            antilog = self.vals[1]
-
-        if isinstance(base, Val.__args__):
-            return antilog.diff(wrt) / (math.log(base) * antilog)
-        else:
-            raise NotImplementedError
+"""
+The definition of some of these simple operators requires some of our extra
+operators. In particular, the derivative of a power relies on the natural
+logarithm. In order to maintain organization of operations, the extra operators
+are in the ops.py file rather than this file, despite the resulting circular
+dependency. The reasoning parallels that given in value.py.
+"""
+from .ops import *  # noqa: E402
