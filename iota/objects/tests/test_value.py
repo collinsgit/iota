@@ -25,7 +25,7 @@ class TestConstant(unittest.TestCase):
 
 
 class TestVariable(unittest.TestCase):
-    """ Test the Constant Class"""
+    """ Test the Variable Class"""
 
     def test_init(self):
         x = Variable('x')
