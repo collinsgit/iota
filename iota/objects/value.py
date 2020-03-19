@@ -13,6 +13,8 @@ Val = Union[float, int]
 # TODO: make this much more intelligent
 def make_constants(f):
     def with_constants(*args, **kwargs):
+        # Everything that isn't a Value is assumed to be an outside number (float, int)
+        # It is then converted to a Constant, which should fail if it is not a number
         args = map(lambda x: x if isinstance(x, Value) else Constant(x), args)
 
         return f(*args, **kwargs)
@@ -20,20 +22,27 @@ def make_constants(f):
 
 
 def simplify(f):
+    # Reduce expression to simplest form
     def wrapper(*args, **kwargs):
         output = f(*args, **kwargs)
 
+        # Evaluate expression to combine adjacent constants
         return output.eval() if isinstance(output, Value) else output
     return wrapper
 
 
 class Value:
+    """
+    Base representation of an object which composed expressions. May be an operator or an element being operated on.
+    """
     def __init__(self):
         pass
 
     def eval(self, val_dict: Dict = None):
+        # Evaluation is null initially
         pass
 
+    # all arithmetic dunders point to BinaryOperations, which are subclasses of Value
     @make_constants
     def __add__(self, other):
         return Sum(self, other)
@@ -75,6 +84,7 @@ class Value:
 
     @simplify
     def diff(self, wrt):
+        # Differentiation of a value with respect to variable named by wrt
         raise NotImplementedError
 
 
