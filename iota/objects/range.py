@@ -24,12 +24,14 @@ class Range:
         raise NotImplementedError
 
 
-class ContinuousRange:
+class ContinuousRange(Range):
     """
     A continuous range over an interval [a,b]
     """
 
     def __init__(self, a: Val, b: Val, closed=True):
+        super().__init__()
+
         self.a = a
         self.b = b
         self.closed = closed
@@ -50,7 +52,7 @@ class ContinuousRange:
             x += step
 
 
-class DiscreteRange:
+class DiscreteRange(Range):
     """
     A discrete range over a set {a,b,c,...}
     """
@@ -68,13 +70,15 @@ class DiscreteRange:
             yield x
 
 
-class CompoundRange:
+class CompoundRange(Range):
     """
     A range which is a combination of other ranges
     Does not check for repetition
     """
 
     def __init__(self, ranges: set):
+        super().__init__()
+
         self.ranges = ranges
 
     def __contains__(self, item):
