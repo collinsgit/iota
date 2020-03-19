@@ -97,3 +97,4 @@ class Value:
 # so that the namespace of Value is already defined by the time the below line
 # is reached.
 from .operator import *  # noqa: E402
+from .constant import Constant  # noqa: E402
