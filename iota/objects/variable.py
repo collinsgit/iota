@@ -1,15 +1,6 @@
 from .value import Val, Value
 
 
-# TODO: make this much more intelligent
-def make_constants(f):
-    def with_constants(*args, **kwargs):
-        args = map(lambda x: x if isinstance(x, Value) else Constant(x), args)
-
-        return f(*args, **kwargs)
-    return with_constants
-
-
 class Constant(Value):
     def __init__(self, val: Val):
         super().__init__()

@@ -1,6 +1,6 @@
 from .value import simplify
 from .value import Val, Value
-from .variable import make_constants
+from .value import make_constants
 
 import math
 from typing import Dict
