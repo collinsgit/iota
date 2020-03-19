@@ -35,6 +35,7 @@ class Value:
     """
     Base representation of an object which composed expressions. May be an operator or an element being operated on.
     """
+
     def __init__(self):
         pass
 
