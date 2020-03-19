@@ -20,10 +20,10 @@ class RandomVariable(Variable):
         self.density = density
         self.range = range
 
-    def sample(self, wrt):
+    def sample(self):
         # Sampling must be implemented
         raise NotImplementedError
 
-    def expect(self, wrt):
+    def expect(self):
         # Expectation must be implemented (maybe this should change)
         raise NotImplementedError
