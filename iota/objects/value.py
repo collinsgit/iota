@@ -13,8 +13,8 @@ Val = Union[float, int]
 # TODO: make this much more intelligent
 def make_constants(f):
     def with_constants(*args, **kwargs):
-        # Everything that isn't a Value is assumed to be an outside number (float, int)
-        # It is then converted to a Constant, which should fail if it is not a number
+        # Everything that isn't a Value is assumed to be an outside number
+        # It is then converted to a Constant
         args = map(lambda x: x if isinstance(x, Value) else Constant(x), args)
 
         return f(*args, **kwargs)
@@ -33,7 +33,8 @@ def simplify(f):
 
 class Value:
     """
-    Base representation of an object which composed expressions. May be an operator or an element being operated on.
+    Base representation of an object which composed expressions.
+    May be an operator or an element being operated on.
     """
 
     def __init__(self):
@@ -43,7 +44,7 @@ class Value:
         # Evaluation is null initially
         pass
 
-    # all arithmetic dunders point to BinaryOperations, which are subclasses of Value
+    # all arithmetic dunders point to BinaryOperations
     @make_constants
     def __add__(self, other):
         return Sum(self, other)
