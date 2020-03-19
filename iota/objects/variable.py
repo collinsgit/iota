@@ -1,3 +1,10 @@
+"""
+
+Contains definitions for terminal values in the system.
+
+"""
+
+
 from .value import Val, Value
 
 
